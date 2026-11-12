@@ -77,38 +77,18 @@ input, select { font: inherit; color: inherit; }
   transition: opacity var(--transition);
 }
 .logo:hover { opacity: .85; }
-.logo-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: -.02em;
-  transform: rotate(-8deg);
-  flex-shrink: 0;
+.brand-logo {
+  display: block;
+  width: 172px;
+  height: 58px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
+.footer-brand .brand-logo {
+  width: 200px;
+  height: 68px;
+  margin-bottom: 8px;
 }
-.logo-text strong {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -.03em;
-}
-.logo-text small {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  color: var(--text-muted);
-}
-.footer-brand .logo-mark { margin-bottom: 8px; }
-.footer-brand .logo-text { margin-bottom: 8px; }
 .nav {
   display: flex;
   gap: 28px;
@@ -545,27 +525,6 @@ input, select { font: inherit; color: inherit; }
   object-fit: contain;
   transition: transform .55s cubic-bezier(.22,1,.36,1);
   filter: drop-shadow(0 12px 24px rgba(0,0,0,.5));
-}
-.product-quick {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
-  z-index: 4;
-  padding: 11px 14px;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  opacity: 0;
-  transform: translateY(22px) scale(.96);
-  transition: opacity .3s ease, transform .55s cubic-bezier(.34,1.56,.64,1);
-}
-.product-card:hover .product-quick,
-.product-card:focus-within .product-quick {
-  opacity: 1;
-  transform: translateY(0) scale(1);
 }
 .product-card:hover .product-visual img {
   transform: scale(1.1) rotate(-5deg);
@@ -1018,7 +977,77 @@ input, select { font: inherit; color: inherit; }
 }
 
 /* ===== Modal ===== */
-.modal-root, .drawer-root {
+html.page-scroll-locked {
+  overflow: hidden;
+  scroll-behavior: auto !important;
+}
+body.page-scroll-locked {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.modal-root, .drawer-root {'@ 'base page scroll lock'
+$css = Replace-One $css '  pointer-events: none;
+}' '  pointer-events: none;
+  overscroll-behavior: none;
+}' 'lock overlay overscroll'
+$css = Replace-One $css '  overflow: auto;
+  animation: fadeIn .25s ease;' '  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeIn .25s ease;' 'contain modal backdrop scroll'
+$css = Replace-One $css '  overflow: auto;
+  background: var(--bg-elevated);' '  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-elevated);' 'contain modal content scroll'
+$css = Replace-One $css '  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  animation: fadeIn .25s;' '  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(0,0,0,.6);
+  animation: fadeIn .25s;' 'contain drawer backdrop'
+$css = Replace-One $css '  width: min(420px, 100%);
+  background: var(--bg-elevated);' '  width: min(420px, 100%);
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: var(--bg-elevated);' 'contain drawer scroll region'
+$css = Replace-One $css '.drawer-head {
+  display: flex;' '.drawer-head {
+  display: flex;
+  flex: 0 0 auto;' 'keep drawer header fixed'
+$css = Replace-One $css '.drawer-items {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 24px;
+}' '.drawer-items {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 24px;
+}
+.drawer-foot { flex: 0 0 auto; }' 'contain drawer item scroll'
+$css = Replace-One $css '  .backdrop { padding: 12px; }' @'
+  .backdrop {
+    place-items: start center;
+    padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+  }
+  .modal { max-height: calc(100dvh - 24px); }'@ 'mobile checkout alignment'
+$css += @'
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="range"]):not([type="color"]),
+select,
+textarea {
+  font-size: 16px !important;
+}
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -1972,7 +2001,6 @@ html.product-detail-open body { overflow: hidden; }
   .filters { flex-wrap: nowrap; margin-right: -20px; padding-right: 20px; }
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }
   .product-visual { aspect-ratio: .82; }
-  .product-quick { opacity: 1; transform: none; left: 10px; right: 10px; bottom: 10px; padding: 10px; }
   .collections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .collection-card, .collection-card.large { min-height: 280px; padding: 22px; }
   .collection-card.large { grid-column: 1 / -1; }
@@ -1995,9 +2023,7 @@ html.product-detail-open body { overflow: hidden; }
   .announcement { padding: 8px 12px; font-size: 9px; letter-spacing: .07em; }
   .header-inner { height: 58px; gap: 8px; padding: 0 12px; }
   .logo { gap: 7px; }
-  .logo-mark { width: 32px; height: 32px; }
-  .logo-text strong { font-size: 14px; }
-  .logo-text small { font-size: 8px; }
+  .brand-logo { width: 142px; height: 48px; }
   .header-actions { gap: 0; }
   .header-actions .icon-btn { width: 40px; height: 40px; }
   #searchBtn, #orderBtn { display: none; }
@@ -2021,7 +2047,6 @@ html.product-detail-open body { overflow: hidden; }
   .product-grid { gap: 18px 10px; }
   .product-visual { aspect-ratio: .76; border-radius: 9px; }
   .product-visual img { width: 96%; height: 78%; }
-  .product-quick { left: 7px; right: 7px; bottom: 7px; padding: 9px 6px; font-size: 10px; }
   .product-badge { top: 8px; left: 8px; padding: 4px 7px; font-size: 8px; }
   .product-wish { top: 7px; right: 7px; width: 32px; height: 32px; }
   .product-info { padding-top: 10px; }
@@ -2084,10 +2109,9 @@ html.product-detail-open body { overflow: hidden; }
 @media (max-width: 360px) {
   .header-inner { padding: 0 8px; }
   .header-actions .icon-btn { width: 40px; }
-  .logo-text strong { font-size: 13px; }
+  .brand-logo { width: 128px; height: 44px; }
   .product-grid { gap: 16px 8px; }
   .product-meta { font-size: 10px; }
-  .product-quick { font-size: 9px; }
   .collections { grid-template-columns: 1fr; }
   .collection-card, .collection-card.large { min-height: 230px; }
   .collection-card.large { grid-column: auto; }
@@ -2101,5 +2125,4 @@ html.product-detail-open body { overflow: hidden; }
     transition-duration: .01ms !important;
   }
   .product-card { opacity: 1; transform: none; }
-  .product-quick { opacity: 1; transform: none; position: static; margin: 12px 14px 0; width: calc(100% - 28px); }
 }

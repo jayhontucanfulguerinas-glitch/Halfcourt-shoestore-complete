@@ -45,6 +45,46 @@ let currentUser = null;
 let csrfToken = null;
 
 const $ = id => document.getElementById(id);
+let pageScrollPosition = 0;
+let previousBodyTop = '';
+let previousBodyPaddingRight = '';
+const overlayRoots = ['modalRoot', 'drawerRoot', 'wishRoot', 'orderRoot', 'checkoutRoot'].map($).filter(Boolean);
+
+function syncPageScrollLock() {
+  const overlayOpen = overlayRoots.some(root => root.childElementCount > 0) ||
+    document.documentElement.classList.contains('product-detail-open');
+  const isLocked = document.body.classList.contains('page-scroll-locked');
+  if (overlayOpen === isLocked) return;
+
+  if (overlayOpen) {
+    pageScrollPosition = window.scrollY;
+    previousBodyTop = document.body.style.top;
+    previousBodyPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollbarWidth > 0) {
+      const bodyPaddingRight = parseFloat(getComputedStyle(document.body).paddingRight) || 0;
+      document.body.style.paddingRight = `${bodyPaddingRight + scrollbarWidth}px`;
+    }
+    document.body.style.top = `-${pageScrollPosition}px`;
+    document.documentElement.classList.add('page-scroll-locked');
+    document.body.classList.add('page-scroll-locked');
+    return;
+  }
+
+  document.body.classList.remove('page-scroll-locked');
+  if (previousBodyTop) document.body.style.top = previousBodyTop;
+  else document.body.style.removeProperty('top');
+  if (previousBodyPaddingRight) document.body.style.paddingRight = previousBodyPaddingRight;
+  else document.body.style.removeProperty('padding-right');
+  const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  document.documentElement.classList.remove('page-scroll-locked');
+  window.scrollTo(0, pageScrollPosition);
+  document.documentElement.style.scrollBehavior = previousScrollBehavior;
+}
+
+const overlayObserver = new MutationObserver(syncPageScrollLock);
+overlayRoots.forEach(root => overlayObserver.observe(root, { childList: true }));
 const money = n => '₱' + Number(n).toLocaleString('en-PH');
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, character => ({
   '&': '&amp;',
@@ -230,14 +270,14 @@ function renderGrid() {
   }
 
   grid.innerHTML = list.map((p, i) => `
-    <article class="product-card" data-id="${escapeHTML(p.id)}" style="animation-delay:${i * 0.05}s">
+    <article class="product-card" data-id="${escapeHTML(p.id)}" tabindex="0" aria-label="View ${escapeHTML(p.name)} ${escapeHTML(p.colorway)} details" style="animation-delay:${i * 0.05}s">
       <div class="product-visual ${p.id === 'aj1-low-panda' ? 'panda-visual' : ''}">
         ${p.badge ? `<span class="product-badge">${escapeHTML(p.badge)}</span>` : ''}
         <button class="product-wish ${wishlist.includes(p.id) ? 'saved' : ''}" data-wish="${escapeHTML(p.id)}" aria-label="Wishlist">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="${wishlist.includes(p.id) ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
         <img class="${p.id === 'aj1-low-panda' ? 'panda-photo' : ''}" src="${escapeHTML(p.image)}" data-fallback="${escapeHTML(p.imageFallback)}" alt="${escapeHTML(p.name)} ${escapeHTML(p.colorway)}" loading="lazy">
-        <button class="product-quick" data-quick="${escapeHTML(p.id)}">Quick view / Add</button>
+
       </div>
       <div class="product-info">
         <div class="product-name">${escapeHTML(p.name)}</div>
@@ -259,6 +299,11 @@ function renderGrid() {
       if (e.target.closest('[data-wish]')) return;
       openDetail(PRODUCTS.find(p => p.id === card.dataset.id));
     });
+    card.addEventListener('keydown', e => {
+      if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      openDetail(PRODUCTS.find(p => p.id === card.dataset.id));
+    });
   });
   grid.querySelectorAll('[data-wish]').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -266,12 +311,7 @@ function renderGrid() {
       toggleWish(btn.dataset.wish);
     });
   });
-  grid.querySelectorAll('[data-quick]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      openDetail(PRODUCTS.find(p => p.id === btn.dataset.quick));
-    });
-  });
+
   setupProductMotion(grid);
   processPandaImages(grid);
 }
